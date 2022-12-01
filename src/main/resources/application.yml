@@ -1,0 +1,22 @@
+server:
+  port: 7071
+
+logging:
+  file:
+    path: ./log/ddns
+ali:
+  list: # 该配置的id项目前只和钉钉机器人群通知有关，需保证id=1的配置有且仅有一个。
+    - id: 1
+      domain:
+      keyword:
+      regionId:
+      accessKey:
+      accessKeySecret:
+      type:
+robot:
+  enabled: true
+  list:
+    - accessToken:
+
+
+
