@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import com.jhdz.ddns.config.DingTalkRobotConfig;
 import com.jhdz.ddns.entity.DDNS;
 import com.jhdz.ddns.util.DingTalkRobotUtil;
+import com.jhdz.ddns.util.IPUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,53 +46,6 @@ public class DDNSClient {
             // 发生调用错误，抛出运行时异常
             throw new RuntimeException();
         }
-    }
-
-    /**
-     * 获取当前主机公网IP
-     */
-    private String getCurrentHostIP(){
-        // 这里使用jsonip.com第三方接口获取本地IP
-        String jsonip = "https://jsonip.com/";
-        // 接口返回结果
-        String result = "";
-        BufferedReader in = null;
-        try {
-            // 使用HttpURLConnection网络请求第三方接口
-            URL url = new URL(jsonip);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setRequestMethod("GET");
-            urlConnection.connect();
-            in = new BufferedReader(new InputStreamReader(
-                    urlConnection.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                result += line;
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-        // 使用finally块来关闭输入流
-        finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (Exception e2) {
-                log.error(e2.getMessage());
-            }
-
-        }
-        // 正则表达式，提取xxx.xxx.xxx.xxx，将IP地址从接口返回结果中提取出来
-        String rexp = "(\\d{1,3}\\.){3}\\d{1,3}";
-        Pattern pat = Pattern.compile(rexp);
-        Matcher mat = pat.matcher(result);
-        String res="";
-        while (mat.find()) {
-            res=mat.group();
-            break;
-        }
-        return res;
     }
 
     /**
@@ -144,7 +99,12 @@ public class DDNSClient {
             // 记录值
             String recordsValue = record.getValue();
             // 当前主机公网IP
-            String currentHostIP = ddnsClient.getCurrentHostIP();
+            String currentHostIP = null;
+            try {
+                currentHostIP = IPUtil.getIP();
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
             log.info("-------------------------------当前主机公网IP为："+currentHostIP+"-------------------------------");
             if(!currentHostIP.equals(recordsValue)){
                 // 修改解析记录
